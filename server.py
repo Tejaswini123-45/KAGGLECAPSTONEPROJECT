@@ -1,38 +1,25 @@
 """
-FastAPI server for the AI Company Builder.
-
-A smart chatbot router that uses Google Gemini API to help founders.
-
-Exposes:
-- GET / — Chatbot UI (chatbot.html)
-- POST /chat — Send a message, get intelligent response from Router Agent (powered by Gemini)
-
-Setup:
-  1. Install google-generativeai: pip install google-generativeai
-  2. Get API key from: https://ai.google.dev/
-  3. Set GEMINI_API_KEY in .env file
-  4. Run: python main.py server
+FastAPI backend for The Growth Hub — AI Company Builder
+Frontend + Backend served from SAME server on port 8000
 """
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from agents.router_agent import router_agent
-import os
-from dotenv import load_dotenv
 from pathlib import Path
-
-# Load environment variables
-load_dotenv()
+from agents.router_agent_handler import get_agent_response
+from memory.memory_manager import load_memory, is_onboarding_complete
 
 app = FastAPI(
-    title="AI Company Builder",
-    description="An AI-powered system to build everything for your business idea.",
+    title="The Growth Hub",
+    description="AI-powered business builder using Google Gemini.",
     version="1.0.0",
 )
 
-# Enable CORS
+# -------------------------------------------------------------
+# CORS SETTINGS
+# -------------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -41,85 +28,78 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
+# -------------------------------------------------------------
+# MODELS
+# -------------------------------------------------------------
 class ChatRequest(BaseModel):
     message: str
-
 
 class ChatResponse(BaseModel):
     response: str
     status: str = "success"
+    question_index: int | None = None
+    onboarding_complete: bool = False
 
-
+# -------------------------------------------------------------
+# SERVE CHATBOT UI
+# -------------------------------------------------------------
 @app.get("/", response_class=HTMLResponse)
-def home():
-    """Serve the chatbot HTML interface."""
-    chatbot_path = Path(__file__).parent / "chatbot.html"
-    try:
-        with open(chatbot_path, "r", encoding="utf-8") as f:
-            return f.read()
-    except FileNotFoundError:
-        return "<h1>Chatbot UI not found</h1>"
+def serve_chatbot():
+    chatbot_file = Path(__file__).parent / "chatbot.html"
+    if chatbot_file.exists():
+        # return FileResponse so browser loads static HTML
+        return FileResponse(str(chatbot_file))
+    return HTMLResponse("<h1>❌ ERROR: chatbot.html not found</h1>", status_code=404)
 
+# -------------------------------------------------------------
+# HEALTH CHECK
+# -------------------------------------------------------------
+@app.get("/health")
+def health():
+    return {"status": "ok", "message": "Growth Hub backend is running"}
 
-@app.post("/chat")
+# -------------------------------------------------------------
+# CHAT ENDPOINT
+# -------------------------------------------------------------
+@app.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest) -> ChatResponse:
-    """
-    Send a message to the Smart Router Agent (powered by Gemini).
-    
-    The router will:
-    - Guide through 10-question onboarding (if not complete)
-    - Understand your business idea
-    - Store answers in long-term memory
-    - Provide personalized recommendations using stored memory
-    - Route to specialized teams when needed
-    
-    Special commands:
-    - "show my answers" - Review your business blueprint
-    - "update [field]" - Update any stored information
-    - "reset onboarding" - Start onboarding over
-    
-    Args:
-        request: ChatRequest with your message
-    
-    Returns:
-        ChatResponse with the router agent's intelligent response
-    """
     try:
-        message = request.message.strip()
-        if not message:
+        user_msg = request.message.strip()
+        if not user_msg:
             return ChatResponse(
-                response="Please share your business idea or question. I'm here to help!",
+                response="Please enter a valid message.",
                 status="error",
+                question_index=load_memory().get("current_question_index", 0),
+                onboarding_complete=is_onboarding_complete()
             )
 
-        # Use memory-aware handler for Router Agent
-        from agents.router_agent_handler import get_agent_response
-        
-        # Debug logging for special commands
-        if message.strip() == "__CHECK_ONBOARDING__":
-            print("[DEBUG] Received __CHECK_ONBOARDING__ command")
-        
-        response = get_agent_response(message)
+        # Process with router handler which uses memory_manager internally
+        bot_reply = get_agent_response(user_msg)
+
+        mem = load_memory()
+        question_index = mem.get("current_question_index", 0)
+        onboard_flag = is_onboarding_complete()
 
         return ChatResponse(
-            response=response,
+            response=bot_reply,
             status="success",
+            question_index=question_index,
+            onboarding_complete=onboard_flag
         )
+
     except Exception as e:
-        error_msg = str(e)
-        if "GEMINI_API_KEY" in error_msg:
-            return ChatResponse(
-                response="⚠️ Gemini API key not configured. Please set GEMINI_API_KEY in .env file. Get one at https://ai.google.dev/",
-                status="error",
-            )
+        mem = load_memory()
         return ChatResponse(
-            response=f"Error processing request: {error_msg}",
+            response=f"⚠️ Server error: {str(e)}",
             status="error",
+            question_index=mem.get("current_question_index", 0),
+            onboarding_complete=is_onboarding_complete()
         )
 
-
+# -------------------------------------------------------------
+# RUN SERVER
+# -------------------------------------------------------------
 if __name__ == "__main__":
     import uvicorn
-
-    uvicorn.run(app, host="localhost", port=8000)
+    print("🚀 Starting Growth Hub backend on http://localhost:8000")
+    uvicorn.run(app, host="0.0.0.0", port=8000)

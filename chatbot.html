@@ -1,740 +1,354 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Company Builder - Chatbot</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Growth Hub — AI Business Builder</title>
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #fff;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
+<style>
+/* ---------------------------------------------------
+   GLOBAL STYLING — Professional, Clean, Modern
+-----------------------------------------------------*/
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: Inter, system-ui, sans-serif;
+  background: #f7f9fc;
+  color: #1e1e1e;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
 
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
+/* HEADER */
+.header {
+  padding: 18px 26px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: 600;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header span.icon {
+  background: #4f46e5;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+}
 
-        .header h1 {
-            font-size: 28px;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
+/* MAIN LAYOUT */
+.main { flex: 1; display: flex; overflow: hidden; }
 
-        .header-icon {
-            width: 32px;
-            height: 32px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
+/* SIDEBAR */
+.sidebar {
+  width: 300px;
+  background: #ffffff;
+  border-right: 1px solid #e5e7eb;
+  overflow-y: auto;
+  padding: 20px;
+}
+.sidebar h2 { font-size: 18px; font-weight: 600; margin-bottom: 12px; }
+.sidebar p { font-size: 13px; color: #6b7280; margin-bottom: 20px; }
 
-        .connection-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 10px;
-            font-size: 14px;
-            justify-content: center;
-        }
+.question-card {
+  border: 1px solid #dcdce6;
+  background: #fafafa;
+  padding: 12px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+.question-card strong { font-size: 14px; display: block; }
+.question-card small { font-size: 11px; color: #6b7280; }
 
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #4ade80;
-            animation: pulse 2s infinite;
-        }
+/* Completed */
+.question-card.completed { border-color: #10b981; background: #ecfdf5; }
+.question-card.completed strong { color: #059669; }
 
-        .status-dot.offline {
-            background: #ef4444;
-            animation: none;
-        }
+/* Current */
+.question-card.current { border-color: #4f46e5; background: #eef2ff; }
+.question-card.current strong { color: #4f46e5; font-weight: 600; }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
+/* Locked */
+.question-card.locked { opacity: 0.55; cursor: not-allowed; }
 
-        .container {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
+/* CHAT AREA */
+.chat-area {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.message { margin-bottom: 8px; display: flex; }
+.message.user { justify-content: flex-end; }
+.message.bot { justify-content: flex-start; }
 
-        .sidebar {
-            display: none; /* Removed sidebar */
-        }
+.msg-box {
+  max-width: 70%;
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-size: 15px;
+  line-height: 1.45;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  white-space: pre-wrap;
+}
+.message.user .msg-box {
+  background: #4f46e5; color: white; border: none;
+}
 
-        .sidebar h2 {
-            font-size: 14px;
-            font-weight: 600;
-            color: #666;
-            margin-bottom: 15px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+/* Typing Indicator */
+.typing { display: flex; gap: 6px; margin: 10px; }
+.dot { width: 8px; height: 8px; background: #9ca3af; border-radius: 50%; animation: blink 1.4s infinite; }
+.dot:nth-child(2) { animation-delay: 0.2s; } .dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes blink { 0%, 100% { opacity: 0.3; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-4px); } }
 
-        .suggestion-btn {
-            background: white;
-            border: 1px solid #ddd;
-            padding: 12px 15px;
-            margin-bottom: 8px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            color: #333;
-            transition: all 0.2s;
-            text-align: left;
-            line-height: 1.4;
-        }
+/* INPUT BAR */
+.input-bar {
+  padding: 16px 20px;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  gap: 12px;
+}
+.input-bar input {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  font-size: 15px;
+  background: #f9fafb;
+}
+.input-bar input:focus { outline: none; border-color: #4f46e5; background: white; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08); }
+button.send-btn { padding: 0 18px; border-radius: 12px; border: none; background: #4f46e5; color: white; font-size: 15px; cursor: pointer; }
+button.send-btn:active { transform: translateY(1px); }
 
-        .suggestion-btn:hover {
-            background: #f0f0f0;
-            border-color: #667eea;
-            color: #667eea;
-        }
-
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chat-area {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            background: white;
-        }
-
-        .message {
-            display: flex;
-            margin-bottom: 16px;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .message.user {
-            justify-content: flex-end;
-        }
-
-        .message.bot {
-            justify-content: flex-start;
-        }
-
-        .message-content {
-            max-width: 70%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            word-wrap: break-word;
-            line-height: 1.5;
-            font-size: 15px;
-        }
-
-        .user .message-content {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-bottom-right-radius: 4px;
-        }
-
-        .bot .message-content {
-            background: #f0f0f0;
-            color: #333;
-            border-bottom-left-radius: 4px;
-        }
-
-        .typing {
-            display: flex;
-            gap: 4px;
-            align-items: center;
-            padding: 12px 16px;
-            background: #f0f0f0;
-            border-radius: 12px;
-            width: fit-content;
-        }
-
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            background: #999;
-            border-radius: 50%;
-            animation: bounce 1.4s infinite;
-        }
-
-        .typing-dot:nth-child(1) { animation-delay: 0s; }
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes bounce {
-            0%, 60%, 100% { transform: translateY(0); }
-            30% { transform: translateY(-8px); }
-        }
-
-        .input-area {
-            padding: 20px;
-            background: white;
-            border-top: 1px solid #e5e5e5;
-            display: flex;
-            gap: 12px;
-        }
-
-        .input-wrapper {
-            flex: 1;
-            display: flex;
-            gap: 8px;
-        }
-
-        input[type="text"] {
-            flex: 1;
-            border: 1px solid #ddd;
-            border-radius: 24px;
-            padding: 12px 20px;
-            font-size: 15px;
-            font-family: inherit;
-            transition: all 0.2s;
-        }
-
-        input[type="text"]:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 24px;
-            cursor: pointer;
-            font-size: 15px;
-            font-weight: 500;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-
-        button:active {
-            transform: scale(0.95);
-        }
-
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .clear-btn {
-            background: #f0f0f0;
-            color: #666;
-            padding: 8px 16px;
-            font-size: 13px;
-            border-radius: 20px;
-        }
-
-        .clear-btn:hover {
-            background: #e0e0e0;
-            box-shadow: none;
-            transform: none;
-        }
-
-        .error-message {
-            background: #fee;
-            color: #c33;
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            border-left: 4px solid #c33;
-        }
-
-        .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: #999;
-            text-align: center;
-        }
-
-        .empty-state-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-            opacity: 0.5;
-        }
-
-        .empty-state h2 {
-            font-size: 24px;
-            color: #333;
-            margin-bottom: 8px;
-        }
-
-        .empty-state p {
-            color: #999;
-            margin-bottom: 20px;
-        }
-
-        .onboarding-progress {
-            background: #e3f2fd;
-            border-left: 4px solid #667eea;
-            padding: 12px 16px;
-            margin-bottom: 16px;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 6px;
-            background: #e0e0e0;
-            border-radius: 3px;
-            margin-top: 8px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            transition: width 0.3s ease;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-            }
-
-            .sidebar {
-                width: 100%;
-                border-right: none;
-                border-bottom: 1px solid #e5e5e5;
-                max-height: 120px;
-                overflow-x: auto;
-                display: flex;
-                flex-direction: row;
-                align-items: center;
-            }
-
-            .suggestion-btn {
-                margin-bottom: 0;
-                margin-right: 8px;
-                white-space: nowrap;
-            }
-
-            .message-content {
-                max-width: 85%;
-            }
-        }
-
-        /* Scrollbar styling */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #ddd;
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #bbb;
-        }
-    </style>
+.status-line { font-size: 13px; color: #6b7280; margin-top: 8px; }
+</style>
 </head>
 <body>
-    <div class="header">
-        <h1>
-            <div class="header-icon">🤖</div>
-            Growth HUB 
-        </h1>
-        <div class="connection-status">
-            <div class="status-dot" id="statusDot"></div>
-            <span id="statusText">Checking connection...</span>
-        </div>
+
+<!-- Header -->
+<div class="header">
+  <span class="icon">🚀</span> The Growth Hub — Business Builder
+</div>
+
+<div class="main">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>Onboarding</h2>
+    <p>Answer all questions to unlock your AI business advisor.</p>
+    <div id="questionList"></div>
+    <div class="status-line" id="onboardStatus">Onboarding progress: 0 / 10</div>
+  </div>
+
+  <!-- Chat Area -->
+  <div class="chat-area" id="chatArea">
+    <div class="message bot">
+      <div class="msg-box">
+        👋 Welcome to <strong>The Growth Hub</strong>.<br/>
+        Let's build your business together. I will ask you 10 critical founder questions.
+      </div>
     </div>
+  </div>
 
-    <div class="container">
-        <div class="main-content" style="width: 100%;">
-            <div class="chat-area" id="chatArea">
-                <div class="empty-state">
-                    <div class="empty-state-icon">💼</div>
-                    <h2>Welcome to The Growth Hub</h2>
-                    <p>Your AI-powered business advisor powered by Google Gemini</p>
-                    <p style="font-size: 14px; margin-top: 10px;">Loading your onboarding status...</p>
-                    <div id="onboardingProgress" class="onboarding-progress">
-                        <div><strong>Onboarding Progress</strong></div>
-                        <div id="progressText">Checking onboarding status...</div>
-                        <div class="progress-bar">
-                            <div id="progressFill" class="progress-fill" style="width: 0%;"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+</div>
 
-            <div class="input-area">
-                <div class="input-wrapper">
-                    <input 
-                        type="text" 
-                        id="messageInput" 
-                        placeholder="Type your answer here..." 
-                        onkeypress="handleKeyPress(event)"
-                    >
-                    <button onclick="sendMessage()" id="sendBtn">Send</button>
-                </div>
-                <button class="clear-btn" onclick="clearChat()">Clear</button>
-            </div>
-        </div>
-    </div>
+<!-- Input Bar -->
+<div class="input-bar">
+  <input id="userInput" placeholder="Type your answer…" onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); sendMessage(); }" />
+  <button class="send-btn" onclick="sendMessage()">Send</button>
+</div>
 
-    <script>
-        const chatArea = document.getElementById('chatArea');
-        const messageInput = document.getElementById('messageInput');
-        const statusDot = document.getElementById('statusDot');
-        const statusText = document.getElementById('statusText');
-        const sendBtn = document.getElementById('sendBtn');
+<script>
+/* ---------- Frontend state ---------- */
+const QUESTIONS = [
+  "What problem are you solving?",
+  "Who is your target audience?",
+  "What is your unique value proposition?",
+  "What exactly are you offering?",
+  "How will the business make money?",
+  "What systems do you need to run the business smoothly?",
+  "How will customers discover your business?",
+  "What is your brand identity?",
+  "Why should people trust your business?",
+  "What is your 1–3 year scaling vision?"
+];
 
-        let isLoading = false;
-        let hasMessages = false;
+let currentIndex = 0;           // server-driven current question index
+let onboardingComplete = false; // server-driven flag
+let isProcessing = false;
 
-        // Check connection status
-        async function checkConnection() {
-            try {
-                const response = await fetch('http://localhost:8000/');
-                if (response.ok) {
-                    statusDot.classList.remove('offline');
-                    statusText.textContent = '✓ Connected';
-                    statusDot.style.background = '#4ade80';
-                    return true;
-                } else {
-                    throw new Error('Server error');
-                }
-            } catch (error) {
-                statusDot.classList.add('offline');
-                statusText.textContent = '✗ Server offline';
-                statusDot.style.background = '#ef4444';
-                return false;
-            }
-        }
+/* ---------- Initialization ---------- */
+renderSidebar();
+initialOnboardingCheck();
 
-        // Check connection on load and every 10 seconds
-        checkConnection();
-        setInterval(checkConnection, 10000);
+/* ---------- Render Sidebar ---------- */
+function renderSidebar() {
+  const list = document.getElementById("questionList");
+  list.innerHTML = "";
 
-        // Auto-check onboarding status and start conversation when page loads
-        async function checkOnboardingAndStart() {
-            try {
-                // Check onboarding status by sending a special check message
-                const response = await fetch('http://localhost:8000/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ message: "__CHECK_ONBOARDING__" })
-                });
+  QUESTIONS.forEach((q, i) => {
+    const card = document.createElement("div");
+    card.className = "question-card";
 
-                if (response.ok) {
-                    const data = await response.json();
-                    // If onboarding incomplete, auto-start the conversation
-                    if (data.response && !data.response.includes('Onboarding Complete') && !data.response.includes('You can now ask me anything')) {
-                        // Remove empty state
-                        if (!hasMessages) {
-                            chatArea.innerHTML = '';
-                            hasMessages = true;
-                        }
-                        
-                        // Show initial greeting/question
-                        const botMessageDiv = document.createElement('div');
-                        botMessageDiv.className = 'message bot';
-                        botMessageDiv.innerHTML = `<div class="message-content">${formatResponse(data.response)}</div>`;
-                        chatArea.appendChild(botMessageDiv);
-                        
-                        // Update progress and input placeholder
-                        updateOnboardingProgress(data.response);
-                        updateInputForOnboarding(true);
-                        
-                        chatArea.scrollTop = chatArea.scrollHeight;
-                    } else if (data.response && (data.response.includes('Onboarding Complete') || data.response.includes('You can now ask me anything'))) {
-                        // Onboarding complete - update UI
-                        updateInputForOnboarding(false);
-                    }
-                }
-            } catch (error) {
-                // Silently fail - user can start manually
-                console.log('Auto-start check failed:', error);
-            }
-        }
+    if (onboardingComplete || i < currentIndex) {
+      card.classList.add("completed");
+    } else if (i === currentIndex) {
+      card.classList.add("current");
+      // clicking current focuses input + shows question
+      card.addEventListener("click", () => promptCurrentQuestion());
+    } else {
+      card.classList.add("locked");
+    }
 
-        // Auto-start onboarding check after page loads
-        window.addEventListener('load', () => {
-            setTimeout(checkOnboardingAndStart, 1000);
-        });
+    card.innerHTML = `<small>Question ${i + 1}</small><strong>${escapeHtml(q)}</strong>`;
+    list.appendChild(card);
+  }
 
-        function insertText(text) {
-            messageInput.value = text;
-            messageInput.focus();
-        }
+  );
 
-        function handleKeyPress(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                sendMessage();
-            }
-        }
+  const statusEl = document.getElementById("onboardStatus");
+  const answered = onboardingComplete ? QUESTIONS.length : currentIndex;
+  statusEl.textContent = `Onboarding progress: ${answered} / ${QUESTIONS.length}`;
+}
 
-        async function sendMessage() {
-            const message = messageInput.value.trim();
-            if (!message || isLoading) return;
+/* ---------- Ask server for current onboarding question (on load) ---------- */
+async function initialOnboardingCheck() {
+  try {
+    // special check message that backend understands
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: "__CHECK_ONBOARDING__" })
+    });
 
-            // Show empty state removal
-            if (!hasMessages) {
-                chatArea.innerHTML = '';
-                hasMessages = true;
-            }
+    const data = await res.json();
+    // Expect: { response, status, question_index, onboarding_complete }
+    if (data) {
+      currentIndex = (typeof data.question_index === 'number') ? data.question_index : 0;
+      onboardingComplete = !!data.onboarding_complete;
+      renderSidebar();
+      if (data.response) appendBot(data.response);
+      // If onboarding not complete and response includes question, focus input
+      if (!onboardingComplete) promptCurrentQuestion();
+    }
+  } catch (err) {
+    appendBot("⚠️ Could not reach server to check onboarding. Make sure the backend is running.");
+    console.error(err);
+  }
+}
 
-            // Add user message
-            const userMessageDiv = document.createElement('div');
-            userMessageDiv.className = 'message user';
-            userMessageDiv.innerHTML = `<div class="message-content">${escapeHtml(message)}</div>`;
-            chatArea.appendChild(userMessageDiv);
+/* ---------- UI helpers ---------- */
+const chatArea = document.getElementById("chatArea");
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+function appendUser(text) {
+  const node = document.createElement("div");
+  node.className = "message user";
+  node.innerHTML = `<div class="msg-box">${escapeHtml(text)}</div>`;
+  chatArea.appendChild(node);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+function appendBot(text) {
+  const node = document.createElement("div");
+  node.className = "message bot";
+  node.innerHTML = `<div class="msg-box">${escapeHtml(text)}</div>`;
+  chatArea.appendChild(node);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
 
-            messageInput.value = '';
-            isLoading = true;
-            sendBtn.disabled = true;
-            messageInput.disabled = true;
+/* Typing bubble */
+let typingBubble = null;
+function showTyping() {
+  if (typingBubble) return;
+  typingBubble = document.createElement("div");
+  typingBubble.className = "typing";
+  typingBubble.innerHTML = `<div class="dot"></div><div class="dot"></div><div class="dot"></div>`;
+  chatArea.appendChild(typingBubble);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+function hideTyping() {
+  if (!typingBubble) return;
+  typingBubble.remove();
+  typingBubble = null;
+}
 
-            // Scroll to bottom
-            chatArea.scrollTop = chatArea.scrollHeight;
+/* Focus current question prompt (visually remind user) */
+function promptCurrentQuestion() {
+  const q = QUESTIONS[currentIndex];
+  appendBot(`📝 Please answer: **Question ${currentIndex + 1} of ${QUESTIONS.length}:** ${q}`);
+  document.getElementById('userInput').focus();
+}
 
-            // Show typing indicator
-            const typingDiv = document.createElement('div');
-            typingDiv.className = 'message bot';
-            typingDiv.innerHTML = `<div class="typing">
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-            </div>`;
-            chatArea.appendChild(typingDiv);
-            chatArea.scrollTop = chatArea.scrollHeight;
+/* ---------- Send message ---------- */
+async function sendMessage() {
+  if (isProcessing) return;
+  const inputEl = document.getElementById("userInput");
+  const msg = inputEl.value.trim();
+  if (!msg) return;
 
-            try {
-                const response = await fetch('http://localhost:8000/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ message: message })
-                });
+  appendUser(msg);
+  inputEl.value = "";
+  showTyping();
+  isProcessing = true;
 
-                const data = await response.json();
-                
-                // Remove typing indicator
-                typingDiv.remove();
+  try {
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg })
+    });
 
-                if (response.ok) {
-                    // Add bot response
-                    const botMessageDiv = document.createElement('div');
-                    botMessageDiv.className = 'message bot';
-                    botMessageDiv.innerHTML = `<div class="message-content">${formatResponse(data.response)}</div>`;
-                    chatArea.appendChild(botMessageDiv);
-                    
-                    // Update onboarding progress indicator
-                    updateOnboardingProgress(data.response);
-                    
-                    // Check if onboarding just completed
-                    if (data.response.includes('Onboarding Complete') || data.response.includes('You can now ask me anything')) {
-                        updateInputForOnboarding(false);
-                    } else if (data.response.includes('Question') || data.response.includes('question')) {
-                        updateInputForOnboarding(true);
-                    }
-                } else {
-                    // Show error
-                    const errorDiv = document.createElement('div');
-                    errorDiv.className = 'message bot';
-                    errorDiv.innerHTML = `<div class="message-content" style="background: #fee; color: #c33;">
-                        ❌ ${escapeHtml(data.response || 'An error occurred')}
-                    </div>`;
-                    chatArea.appendChild(errorDiv);
-                }
-            } catch (error) {
-                // Remove typing indicator
-                typingDiv.remove();
+    const data = await res.json();
+    hideTyping();
+    isProcessing = false;
 
-                // Show connection error
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'message bot';
-                errorDiv.innerHTML = `<div class="message-content" style="background: #fee; color: #c33;">
-                    ❌ Connection error: Make sure the server is running on http://localhost:8000
-                </div>`;
-                chatArea.appendChild(errorDiv);
-            } finally {
-                isLoading = false;
-                sendBtn.disabled = false;
-                messageInput.disabled = false;
-                messageInput.focus();
-                chatArea.scrollTop = chatArea.scrollHeight;
-            }
-        }
+    // Data contract expected:
+    // { response: str, status: "success"|"error", question_index: number|null, onboarding_complete: bool }
+    if (!data) {
+      appendBot("⚠️ Empty response from server.");
+      return;
+    }
 
-        function clearChat() {
-            chatArea.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">💼</div>
-                    <h2>Welcome to AI Company Builder</h2>
-                    <p>Your AI-powered business advisor powered by Google Gemini</p>
-                    <p style="font-size: 14px; margin-top: 10px;">Ask me anything about starting, building, or scaling your business!</p>
-                </div>
-            `;
-            hasMessages = false;
-            messageInput.focus();
-        }
+    // Show bot message
+    appendBot(data.response || "No response from server.");
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+    // Update client-side progress from server authoritative state
+    if (typeof data.question_index === 'number') currentIndex = data.question_index;
+    if (typeof data.onboarding_complete === 'boolean') onboardingComplete = data.onboarding_complete;
 
-        function formatResponse(text) {
-            // Simple formatting - convert line breaks to <br>
-            return text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        }
+    renderSidebar();
 
-        // Update input placeholder and UI based on onboarding state
-        function updateInputForOnboarding(isOnboarding) {
-            const messageInput = document.getElementById('messageInput');
-            if (isOnboarding) {
-                messageInput.placeholder = "Type your answer here...";
-                // Show onboarding notice
-                if (!document.getElementById('onboardingNotice')) {
-                    const notice = document.createElement('div');
-                    notice.id = 'onboardingNotice';
-                    notice.style.cssText = 'padding: 8px 16px; background: #e3f2fd; color: #1976d2; font-size: 13px; text-align: center; border-bottom: 1px solid #e0e0e0;';
-                    notice.textContent = '📋 Completing onboarding - Please answer all questions';
-                    document.querySelector('.input-area').insertBefore(notice, document.querySelector('.input-wrapper'));
-                }
-            } else {
-                messageInput.placeholder = "Ask me anything about your business...";
-                const notice = document.getElementById('onboardingNotice');
-                if (notice) {
-                    notice.remove();
-                }
-            }
-        }
+    // If bot says onboarding completed, show final summary prompt
+    if (onboardingComplete) {
+      appendBot("🎉 Onboarding complete. You can now ask anything about your business.");
+    } else {
+      // If server responds with next question, auto-focus input
+      document.getElementById("userInput").focus();
+    }
 
-        // Update onboarding progress indicator
-        function updateOnboardingProgress(responseText) {
-            const progressDiv = document.getElementById('onboardingProgress');
-            const progressText = document.getElementById('progressText');
-            const progressFill = document.getElementById('progressFill');
-            
-            if (!progressDiv) return;
-            
-            // Check if onboarding is complete
-            if (responseText.includes('Onboarding Complete') || responseText.includes('Excellent!') && responseText.includes('business blueprint')) {
-                progressDiv.style.display = 'block';
-                progressText.textContent = 'Onboarding Complete! ✓';
-                progressFill.style.width = '100%';
-                setTimeout(() => {
-                    progressDiv.style.display = 'none';
-                }, 5000);
-                return;
-            }
-            
-            // Check for question numbers in various formats
-            let questionNum = null;
-            const patterns = [
-                /Question (\d+)/i,
-                /question (\d+)/i,
-                /(\d+)\./  // "1." or "2."
-            ];
-            
-            for (const pattern of patterns) {
-                const match = responseText.match(pattern);
-                if (match) {
-                    questionNum = parseInt(match[1]);
-                    break;
-                }
-            }
-            
-            // If we detect onboarding flow but no specific number, estimate based on content
-            if (!questionNum) {
-                if (responseText.toLowerCase().includes('what problem') || responseText.toLowerCase().includes('problem are you solving')) {
-                    questionNum = 1;
-                } else if (responseText.toLowerCase().includes('target audience') || responseText.toLowerCase().includes('who exactly')) {
-                    questionNum = 2;
-                } else if (responseText.toLowerCase().includes('unique value') || responseText.toLowerCase().includes('unique')) {
-                    questionNum = 3;
-                } else if (responseText.toLowerCase().includes('offering') || responseText.toLowerCase().includes('product or service')) {
-                    questionNum = 4;
-                } else if (responseText.toLowerCase().includes('make money') || responseText.toLowerCase().includes('business model')) {
-                    questionNum = 5;
-                } else if (responseText.toLowerCase().includes('systems') || responseText.toLowerCase().includes('tools do you need')) {
-                    questionNum = 6;
-                } else if (responseText.toLowerCase().includes('customers discover') || responseText.toLowerCase().includes('marketing')) {
-                    questionNum = 7;
-                } else if (responseText.toLowerCase().includes('brand identity')) {
-                    questionNum = 8;
-                } else if (responseText.toLowerCase().includes('trust') || responseText.toLowerCase().includes('credibility')) {
-                    questionNum = 9;
-                } else if (responseText.toLowerCase().includes('scaling') || responseText.toLowerCase().includes('1-3 year')) {
-                    questionNum = 10;
-                }
-            }
-            
-            if (questionNum) {
-                const totalQuestions = 10;
-                const percentage = (questionNum / totalQuestions) * 100;
-                progressDiv.style.display = 'block';
-                progressText.textContent = `Question ${questionNum} of ${totalQuestions}`;
-                progressFill.style.width = percentage + '%';
-            } else if (responseText.includes('Welcome') || responseText.includes('Hello')) {
-                // Just starting
-                progressDiv.style.display = 'block';
-                progressText.textContent = 'Starting onboarding...';
-                progressFill.style.width = '0%';
-            }
-        }
+  } catch (err) {
+    hideTyping();
+    isProcessing = false;
+    console.error(err);
+    appendBot("❌ Error connecting to server. Make sure backend (port 8000) is running.");
+  }
+}
+</script>
 
-        // Focus input on load
-        messageInput.focus();
-    </script>
 </body>
 </html>

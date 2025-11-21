@@ -1,14 +1,4 @@
 {
-  "problem": "",
-  "target_audience": "",
-  "unique_value": "",
-  "offer": "",
-  "business_model": "",
-  "systems_needed": "",
-  "marketing_plan": "",
-  "brand_identity": "",
-  "trust_factors": "",
-  "scaling_vision": "",
-  "onboarding_complete": false,
-  "current_question_index": 0
+  "current_question_index": 0,
+  "onboarding_complete": false
 }

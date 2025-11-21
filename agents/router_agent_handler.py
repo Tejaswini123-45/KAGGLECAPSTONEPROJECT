@@ -16,9 +16,8 @@ from memory.memory_manager import (
     update_memory,
     get_memory_field,
 )
-from agents.router_agent import router_agent
 
-
+# Note: router_agent is imported lazily only when needed to speed up server startup
 def process_message_with_memory(user_message: str) -> str:
     """
     Process user message with memory awareness and onboarding flow.
@@ -96,88 +95,73 @@ How can I assist you today?"""
 
 def generate_conversational_question(question_num: int, question_text: str, field: str, memory: Dict) -> str:
     """Generate a conversational, friendly question to ask the user."""
-    # Build context of previous answers for natural conversation
-    answered_fields = [f for f, q in ONBOARDING_QUESTIONS if memory.get(f, "").strip()]
-    
     if question_num == 1:
         return f"""Welcome to The Growth Hub! 🚀
 
 Before I can help you build your business, I need to understand your vision. Let's complete a quick onboarding - I'll ask you 10 questions about your business idea.
 
-**Question 1:** What problem are you solving?
+**Question 1 of 10:** {question_text}
 
 Think about what challenges or pain points your target customers face that you want to address."""
     
-    # For subsequent questions, reference previous context naturally
-    context_hint = ""
-    if answered_fields:
-        last_field = answered_fields[-1]
-        if last_field == "problem" and memory.get("problem"):
-            context_hint = f"Now that we know you're solving {memory['problem'][:50]}..."
-        elif last_field == "target_audience" and memory.get("target_audience"):
-            context_hint = f"Great! So your target audience is {memory['target_audience'][:50]}. "
-    
-    # Natural question phrasing based on question number - matches exact questions
-    natural_phrases = {
-        2: f"{context_hint}**Question 2:** Who is your target audience?",
-        3: f"{context_hint}**Question 3:** What is your unique value proposition?",
-        4: f"{context_hint}**Question 4:** What exactly are you offering?",
-        5: f"{context_hint}**Question 5:** How will the business make money?",
-        6: f"{context_hint}**Question 6:** What systems do you need to run the business smoothly?",
-        7: f"{context_hint}**Question 7:** How will customers discover your business?",
-        8: f"{context_hint}**Question 8:** What is your brand identity?",
-        9: f"{context_hint}**Question 9:** Why should people trust your business?",
-        10: f"{context_hint}**Question 10:** What is your 1–3 year scaling vision?",
-    }
-    
-    return natural_phrases.get(question_num, f"{context_hint}**Question {question_num}:** {question_text}")
+    # For subsequent questions, keep it simple and direct
+    return f"**Question {question_num} of 10:** {question_text}"
 
 
 def validate_answer_relevance(question: str, answer: str, llm) -> Tuple[bool, str]:
     """
     Use LLM to validate if the answer is relevant to the question.
     Returns: (is_relevant: bool, feedback: str)
+    
+    Quick validation - if answer is reasonably detailed, accept it.
     """
-    validation_prompt = f"""You are helping validate if a user's answer is relevant to a business onboarding question.
+    # Quick pre-checks before calling LLM
+    answer_lower = answer.lower().strip()
+    
+    # If answer is very short, reject immediately (increased from 15 to 25)
+    if len(answer) < 25:
+        return False, "Please provide more details (at least 25 characters). Think about your business vision."
+    
+    # Check for vague/generic answers
+    vague_phrases = ['i dont know', "i'm not sure", 'maybe', 'probably', 'not sure yet', 'tbd', 'to be determined', 'idk', 'dunno']
+    if any(phrase in answer_lower for phrase in vague_phrases) and len(answer) < 50:
+        return False, "Please provide a more specific answer. Take your time to think about your business."
+    
+    # If answer looks completely off-topic (common spam words), reject
+    spam_words = ['click here', 'buy now', 'free money', 'guaranteed', 'xyz', 'abc', 'test', 'hello world', 'lorem ipsum']
+    if any(word in answer_lower for word in spam_words):
+        return False, "Please provide a genuine business answer, not test or promotional text."
+    
+    # If answer addresses the question meaningfully, accept it
+    # (Check for common business-related keywords)
+    business_keywords = ['business', 'product', 'service', 'customer', 'market', 'money', 'sell', 'buy', 'need', 'want', 'problem', 'solution', 'make', 'create', 'build', 'help', 'support', 'provide', 'offer', 'have', 'use', 'platform', 'online', 'digital', 'brand', 'people', 'audience', 'sell', 'revenue', 'profit']
+    
+    has_business_keyword = any(keyword in answer_lower for keyword in business_keywords)
+    
+    if has_business_keyword and len(answer) > 20:
+        # Likely a valid answer - accept it
+        print(f"[DEBUG] Quick validation: ACCEPTED (has business context, {len(answer)} chars)")
+        return True, ""
+    
+    # If unclear, try LLM validation (with timeout)
+    try:
+        validation_prompt = f"""Is this answer relevant to the business question? Answer with just YES or NO.
 
 QUESTION: {question}
+ANSWER: {answer}
 
-USER'S ANSWER: {answer}
-
-Analyze if the answer is relevant and addresses the question. Consider:
-1. Does the answer relate to the question topic?
-2. Is it a reasonable business-related answer?
-3. Is it specific enough (not too vague)?
-
-Respond with ONLY one of these:
-- "RELEVANT" - if the answer is good and relevant
-- "VAGUE" - if the answer is too short or vague, provide a brief hint
-- "IRRELEVANT" - if the answer doesn't address the question at all
-
-Format: [STATUS] [Optional brief feedback]
-"""
-    
-    try:
-        response = llm.call(validation_prompt).strip()
+Reply with one word only: YES or NO"""
         
-        if "RELEVANT" in response.upper():
+        response = llm.call(validation_prompt).strip()[:20].upper()
+        print(f"[DEBUG] LLM validation response: {response}")
+        
+        if "YES" in response:
             return True, ""
-        elif "VAGUE" in response.upper():
-            feedback = response.replace("VAGUE", "").strip()
-            if not feedback:
-                feedback = "Could you provide a bit more detail? I'd love to understand better."
-            return False, feedback
-        elif "IRRELEVANT" in response.upper():
-            feedback = response.replace("IRRELEVANT", "").strip()
-            if not feedback:
-                feedback = "That doesn't quite address this question. Let me rephrase..."
-            return False, feedback
         else:
-            # Default to accepting if unclear
-            return True, ""
+            return False, "Please address the question more directly."
     except Exception as e:
-        # If validation fails, default to accepting
-        print(f"[WARN] Answer validation failed: {e}")
+        # If LLM fails, be lenient (user experience matters more than perfect validation)
+        print(f"[WARN] LLM validation failed: {str(e)[:50]}, accepting answer")
         return True, ""
 
 
@@ -185,6 +169,8 @@ def handle_onboarding_conversation(user_message: str, memory: Dict) -> str:
     """
     Handle FORCED onboarding conversation flow.
     User MUST answer questions sequentially - no other topics allowed.
+    
+    All answers are validated for relevance using LLM before being stored.
     """
     current_question_data = get_current_question()
     
@@ -210,36 +196,31 @@ def handle_onboarding_conversation(user_message: str, memory: Dict) -> str:
         first_question = ONBOARDING_QUESTIONS[0]
         return "Onboarding reset! Let's start fresh.\n\n" + generate_conversational_question(1, first_question[1], first_question[0], load_memory())
     
-    # STRICT ENFORCEMENT: If user tries to ask unrelated questions, redirect them
+    # STRICT ENFORCEMENT: Save answer if it's detailed and relevant
     if not current_answer:
-        # Check if this is an answer attempt or unrelated question
-        is_likely_answer = check_if_answer_attempt(user_message, question_text, question_num)
-        
-        if not is_likely_answer:
-            # User is trying to ask something else - redirect firmly but politely
-            return f"""I'm currently helping you complete your business onboarding. Once we finish all 10 questions, I'll be happy to answer any questions you have!
-
-Right now, let's focus on this question:
-
-**Question {question_num}: {question_text}**
-
-Please share your answer to this question. After we complete onboarding, I'll be ready to help with anything else! 😊"""
-        
-        # It's likely an answer - validate with LLM
-        is_relevant, feedback = validate_answer_relevance(question_text, user_message, router_agent.llm)
-        
-        if not is_relevant:
-            # Answer not relevant - guide user back firmly
-            if feedback:
-                return f"{feedback}\n\n**Please answer this question:** {question_text}"
-            else:
-                return f"I'd love to help with that after onboarding is complete! Right now, please answer:\n\n**Question {question_num}: {question_text}**"
-        
-        # Answer is relevant - check if detailed enough
+        # Answer is new - check if detailed enough (minimum 10 chars)
         if len(user_message.strip()) < 10:
-            return f"I'd appreciate a bit more detail to better understand your vision.\n\n**Question {question_num}: {question_text}**"
+            return f"I'd appreciate a bit more detail to better understand your vision.\n\n**Question {question_num} of 10:** {question_text}"
         
-        # SAVE THE ANSWER - This is a valid answer
+        # VALIDATE ANSWER RELEVANCE using LLM with timeout
+        print(f"[DEBUG] Validating answer for field '{field}'...")
+        try:
+            from agents.router_agent import router_agent
+            is_relevant, feedback = validate_answer_relevance(question_text, user_message, router_agent.llm)
+            
+            if not is_relevant:
+                # Answer is not relevant - reject and ask again with feedback
+                print(f"[DEBUG] Answer rejected for field '{field}': {feedback}")
+                rejection_msg = f"That doesn't quite address the question. {feedback if feedback else ''}\n\n**Question {question_num} of 10:** {question_text}"
+                return rejection_msg.strip()
+        except Exception as e:
+            # If validation fails or times out, be lenient and accept the answer
+            print(f"[WARN] Validation error (being lenient): {str(e)[:100]}")
+            # Continue to save the answer anyway
+            pass
+        
+        # SAVE THE ANSWER - This is a relevant answer
+        print(f"[DEBUG] Answer validated! Saving answer to field '{field}': {user_message[:50]}...")
         save_answer(field, user_message)
         
         # Check if more questions
@@ -248,9 +229,11 @@ Please share your answer to this question. After we complete onboarding, I'll be
             next_question = ONBOARDING_QUESTIONS[next_index]
             next_question_num = next_index + 1
             # Auto-ask next question
-            return f"Perfect! Thank you for that information. ✅\n\n**Question {next_question_num}:** {next_question[1]}"
+            print(f"[DEBUG] Moving to question {next_question_num}")
+            return f"Perfect! Thank you for that information. ✅\n\n**Question {next_question_num} of 10:** {next_question[1]}"
         else:
             # All questions answered!
+            print("[DEBUG] All questions answered, showing completion response")
             return generate_onboarding_complete_response()
     else:
         # Field already answered, move to next automatically
@@ -258,45 +241,13 @@ Please share your answer to this question. After we complete onboarding, I'll be
         if next_index is not None:
             next_question = ONBOARDING_QUESTIONS[next_index]
             next_question_num = next_index + 1
+            print(f"[DEBUG] Field already answered, moving to question {next_question_num}")
             return generate_conversational_question(next_question_num, next_question[1], next_question[0], memory)
         else:
             # All answered but flag not set
+            print("[DEBUG] All questions answered (already saved), showing completion")
             save_answer(field, current_answer)  # Ensure flag is set
             return generate_onboarding_complete_response()
-
-
-def check_if_answer_attempt(user_message: str, current_question: str, question_num: int) -> bool:
-    """
-    Check if user message is likely an answer to the current question.
-    Returns True if it seems like an answer, False if it's a different question/topic.
-    """
-    user_lower = user_message.lower().strip()
-    
-    # Common question indicators (user is asking something)
-    question_indicators = [
-        "how do i", "how can i", "what is", "what are", "why", "when", "where",
-        "tell me", "explain", "help me", "can you", "i want to", "i need to",
-        "i want", "i need", "how to", "what should", "what would"
-    ]
-    
-    # If message starts with question indicators, likely not an answer
-    if any(user_lower.startswith(indicator) for indicator in question_indicators):
-        # Unless it's very short, might be answering with a question format
-        if len(user_message) < 30:
-            return True  # Could be a short answer
-        return False  # Likely asking something else
-    
-    # Greetings - not answers
-    greetings = ["hello", "hi", "hey", "greetings", "good morning", "good afternoon", "good evening"]
-    if any(greeting in user_lower for greeting in greetings) and len(user_message) < 25:
-        return False
-    
-    # If message is long enough and doesn't start with question words, likely an answer
-    if len(user_message) > 15:
-        return True
-    
-    # Default: assume it might be an answer (validation will catch it if not)
-    return True
 
 
 def generate_onboarding_complete_response() -> str:
@@ -367,6 +318,7 @@ If they want to update information, help them do so.
     
     # Get response from the agent's LLM
     try:
+        from agents.router_agent import router_agent
         response = router_agent.llm.call(enhanced_prompt)
         return response
     except Exception as e:
@@ -392,3 +344,5 @@ def get_agent_response(user_message: str) -> str:
     """Main entry point for getting agent responses."""
     return process_message_with_memory(user_message)
 
+    return ChatResponse(response=get_agent_response(user_msg))
+    

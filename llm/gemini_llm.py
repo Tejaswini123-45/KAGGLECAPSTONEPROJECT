@@ -38,6 +38,10 @@ class GeminiLLM(BaseLLM):
         llm = GeminiLLM()  # Uses env variables (defaults to gemini-flash-latest)
         llm = GeminiLLM(model="gemini-2.0-flash")  # Override model
     """
+    
+    # Class-level cache for model instances and configuration
+    _model_cache = {}
+    _api_key_configured = False
 
     def __init__(
         self,
@@ -65,8 +69,10 @@ class GeminiLLM(BaseLLM):
                 "GEMINI_API_KEY not provided. Set it via environment variable or parameter."
             )
 
-        # Configure genai with API key
-        genai.configure(api_key=api_key)
+        # Configure genai with API key (only once - improves startup speed)
+        if not GeminiLLM._api_key_configured:
+            genai.configure(api_key=api_key)
+            GeminiLLM._api_key_configured = True
 
         # Set model name - handle various formats
         # google.generativeai.GenerativeModel() expects model name WITHOUT "models/" prefix
@@ -130,14 +136,14 @@ class GeminiLLM(BaseLLM):
             prompt = str(messages)
 
         try:
-            # Debug output
-            print(f"[DEBUG] Calling Gemini API with model: {self.model_name}")
-            print(f"[DEBUG] Prompt length: {len(prompt)} chars")
+            # Check cache for model instance to avoid recreating on every call
+            if self.model_name not in GeminiLLM._model_cache:
+                # Create the model instance - pass model name WITHOUT "models/" or "gemini/" prefix
+                # GenerativeModel() expects just the model name (e.g., "gemini-flash-latest")
+                # The SDK handles the prefix internally
+                GeminiLLM._model_cache[self.model_name] = genai.GenerativeModel(self.model_name)
             
-            # Create the model instance - pass model name WITHOUT "models/" or "gemini/" prefix
-            # GenerativeModel() expects just the model name (e.g., "gemini-flash-latest")
-            # The SDK handles the prefix internally
-            model = genai.GenerativeModel(self.model_name)
+            model = GeminiLLM._model_cache[self.model_name]
 
             # Generate content with proper configuration
             response = model.generate_content(

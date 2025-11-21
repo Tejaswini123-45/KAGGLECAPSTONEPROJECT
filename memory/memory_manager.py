@@ -55,7 +55,7 @@ def load_memory() -> Dict:
         return DEFAULT_MEMORY.copy()
     
     try:
-        with open(MEMORY_FILE, "r", encoding="utf-8") as f:
+        with open(MEMORY_FILE, "r", encoding="utf-8-sig") as f:
             memory = json.load(f)
         
         # Ensure all required fields exist (backward compatibility)
@@ -75,6 +75,7 @@ def save_memory(memory: Dict) -> bool:
         # Ensure directory exists
         MEMORY_DIR.mkdir(parents=True, exist_ok=True)
         
+        # Use UTF-8 without BOM for clean JSON files
         with open(MEMORY_FILE, "w", encoding="utf-8") as f:
             json.dump(memory, f, indent=2, ensure_ascii=False)
         return True
@@ -150,22 +151,35 @@ def save_answer(field: str, answer: str) -> bool:
     memory = load_memory()
     
     if field not in DEFAULT_MEMORY:
+        print(f"[ERROR] Unknown field: {field}")
         return False
     
+    # Update the answer
     memory[field] = answer.strip()
+    print(f"[DEBUG] Saved answer to '{field}'")
     
-    # Find next unanswered question
-    next_index = get_next_question_index()
+    # Find next unanswered question by checking all fields
+    next_index = None
+    for i, (field_name, _) in enumerate(ONBOARDING_QUESTIONS):
+        if not memory.get(field_name, "").strip():
+            next_index = i
+            break
+    
+    print(f"[DEBUG] Next unanswered question index: {next_index}")
     
     if next_index is not None:
         memory["current_question_index"] = next_index
         memory["onboarding_complete"] = False
+        print(f"[DEBUG] Moving to question index {next_index}")
     else:
         # All questions answered!
         memory["onboarding_complete"] = True
         memory["current_question_index"] = len(ONBOARDING_QUESTIONS)
+        print("[DEBUG] All questions answered!")
     
-    return save_memory(memory)
+    success = save_memory(memory)
+    print(f"[DEBUG] Memory saved successfully: {success}")
+    return success
 
 
 def get_business_summary() -> str:

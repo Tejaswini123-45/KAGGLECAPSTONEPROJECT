@@ -7,8 +7,6 @@ Usage:
   python main.py server       - Start FastAPI server on port 8000
 """
 
-from crew.crew_definition import my_crew
-from agents.router_agent import router_agent
 import sys
 import os
 from dotenv import load_dotenv
@@ -19,6 +17,7 @@ load_dotenv()
 
 def interactive_chat():
     """Interactive REPL to chat with the router agent."""
+    from agents.router_agent import router_agent
     llm = router_agent.llm
     
     print("\n" + "="*60)
@@ -51,6 +50,8 @@ def interactive_chat():
 
 def run_crew():
     """Run the crew with all agents and tasks."""
+    from crew.crew_definition import my_crew
+    
     print("\n" + "="*60)
     print("AI Company Builder - Running Crew")
     print("="*60 + "\n")
