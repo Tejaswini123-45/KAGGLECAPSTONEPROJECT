@@ -210,6 +210,13 @@ Server starts at: **http://localhost:8000**
 ---
 
 ## 🎬 How It Works
+<img width="1909" height="827" alt="image" src="https://github.com/user-attachments/assets/c179aaf7-5daa-47c3-82b2-98089392a82f" />
+<img width="1600" height="694" alt="image" src="https://github.com/user-attachments/assets/9b3ace1f-cd1a-4cc5-8515-2ab43b8b27e7" />
+<img width="1600" height="687" alt="image" src="https://github.com/user-attachments/assets/f1e5e6ee-c818-450b-a29f-dfcc712f51a9" />
+<img width="800" height="687" alt="image" src="https://github.com/user-attachments/assets/ec378c65-1958-4e23-b603-f97c7b5f7f93" />
+
+
+
 
 ### User Journey
 
@@ -817,12 +824,3 @@ This is what happens when AI becomes your co-founder.
 
 ---
 
-<div align="center">
-
-**Built with ❤️ for entrepreneurs everywhere**
-
-*Empowering the next generation of business builders*
-
-[⬆ Back to Top](#-growth-hub-ai---your-ai-powered-business-co-founder)
-
-</div>
