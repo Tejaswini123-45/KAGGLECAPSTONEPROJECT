@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Builder - Growth Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/builder.css">
+</head>
+<body class="bg-gray-900 text-white h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <div class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <span class="text-2xl">🚀</span>
+            <h1 class="text-xl font-semibold">Website Builder</h1>
+        </div>
+        <button id="deployBtn" class="bg-indigo-600 hover:bg-indigo-700 px-6 py-2 rounded-lg font-medium">
+            ☁️ Deploy
+        </button>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="flex flex-1 overflow-hidden">
+
+        <!-- Left Sidebar - Controls -->
+        <div class="w-80 bg-gray-800 border-r border-gray-700 p-6 overflow-y-auto">
+            
+            <!-- Build Section -->
+            <div class="mb-8">
+                <h2 class="text-lg font-semibold mb-2">Generate Website</h2>
+                <p class="text-sm text-gray-400 mb-4">
+                    Complete the chatbot onboarding first, then click build to generate your website.
+                </p>
+                <button id="startBuildBtn" class="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
+                    🚀 Build Website
+                </button>
+                <p id="briefStatus" class="text-sm mt-4 text-gray-400"></p>
+            </div>
+
+            <!-- Tweaks Section -->
+            <div class="border-t border-gray-700 pt-6">
+                <h2 class="text-lg font-semibold mb-4">Live Tweaks</h2>
+                
+                <div class="space-y-4">
+                    <!-- Headline -->
+                    <div>
+                        <label class="block text-sm text-gray-300 mb-2">Hero Headline</label>
+                        <input type="text" id="heroHeadline" placeholder="Enter new headline..."
+                            class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <!-- Subheadline -->
+                    <div>
+                        <label class="block text-sm text-gray-300 mb-2">Hero Subheadline</label>
+                        <textarea id="heroSubheadline" rows="2" placeholder="Enter subheadline..."
+                            class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+
+                    <!-- CTA -->
+                    <div>
+                        <label class="block text-sm text-gray-300 mb-2">CTA Button Text</label>
+                        <input type="text" id="heroCta" placeholder="Get Started"
+                            class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <!-- Color -->
+                    <div>
+                        <label class="block text-sm text-gray-300 mb-2">Primary Color</label>
+                        <div class="flex gap-3">
+                            <input type="color" id="primaryColor" value="#4f46e5"
+                                class="w-16 h-10 rounded cursor-pointer border border-gray-600">
+                            <input type="text" id="primaryColorText" value="#4f46e5"
+                                class="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+
+                    <!-- Regenerate Button -->
+                    <button id="regenerateBtn" class="w-full px-4 py-3 bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded-lg font-medium">
+                        🔄 Regenerate Preview
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tips -->
+            <div class="mt-6 p-4 bg-gray-700/50 rounded-lg">
+                <p class="text-xs text-gray-400">
+                    💡 <strong class="text-gray-300">Tip:</strong> Make changes above and click Regenerate to update your website preview.
+                </p>
+            </div>
+        </div>
+
+        <!-- Main Preview Area -->
+        <div class="flex-1 bg-gray-900 relative">
+            <iframe id="websitePreview" class="w-full h-full border-0" src="about:blank"></iframe>
+
+            <!-- Loading Overlay -->
+            <div id="loadingOverlay" class="absolute inset-0 bg-gray-900/90 flex items-center justify-center hidden">
+                <div class="text-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+                    <p class="text-gray-400">Generating website...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 p-8">
+            <div class="text-center">
+                <div class="text-6xl mb-4">🚀</div>
+                <h2 class="text-2xl font-bold text-white mb-2">Deploy Your Website</h2>
+                <p class="text-gray-400 mb-6">Download your website and deploy it anywhere!</p>
+
+                <div class="flex flex-col gap-3">
+                    <button id="downloadSourceBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium">
+                        💾 Download HTML
+                    </button>
+                    <button id="closeModalBtn" class="w-full bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium">
+                        Close
+                    </button>
+                </div>
+
+                <p class="text-xs text-gray-500 mt-4">
+                    Upload to Vercel, Netlify, or any web host
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/builder.js"></script>
+</body>
+</html>

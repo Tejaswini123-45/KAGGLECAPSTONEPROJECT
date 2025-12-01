@@ -1,0 +1,34 @@
+{
+  "site_structure": [
+    "Hero Section",
+    "Why Us",
+    "Features",
+    "How It Works",
+    "Testimonials",
+    "Pricing",
+    "CTA"
+  ],
+  "color_palette": [
+    "#000000",
+    "#FFFFFF",
+    "#FFB703",
+    "#219EBC"
+  ],
+  "tone_of_voice": "friendly, confident, clear",
+  "positioning": "A solution for your needs",
+  "differentiation_points": [
+    "Unique approach",
+    "Better customer experience",
+    "Competitive pricing"
+  ],
+  "competitive_advantages": [
+    {
+      "title": "Unique Value",
+      "description": "Our unique approach"
+    },
+    {
+      "title": "Better Service",
+      "description": "We focus on customer satisfaction"
+    }
+  ]
+}

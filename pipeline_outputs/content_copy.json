@@ -1,0 +1,72 @@
+{
+  "hero": {
+    "h1": "Your Solution Here",
+    "subtext": "We help you achieve your goals"
+  },
+  "features": [
+    {
+      "title": "Feature 1",
+      "description": "Description of feature 1"
+    },
+    {
+      "title": "Feature 2",
+      "description": "Description of feature 2"
+    },
+    {
+      "title": "Feature 3",
+      "description": "Description of feature 3"
+    }
+  ],
+  "how_it_works": [
+    {
+      "step": 1,
+      "title": "Step 1",
+      "description": "Description of step 1"
+    },
+    {
+      "step": 2,
+      "title": "Step 2",
+      "description": "Description of step 2"
+    },
+    {
+      "step": 3,
+      "title": "Step 3",
+      "description": "Description of step 3"
+    }
+  ],
+  "testimonials": [
+    {
+      "quote": "Great service!",
+      "author": "John Doe",
+      "role": "Customer"
+    }
+  ],
+  "pricing": {
+    "title": "Choose Your Plan",
+    "description": "Select the plan that works for you",
+    "plans": []
+  },
+  "cta": {
+    "primary": "Get Started",
+    "secondary": "Learn More"
+  },
+  "why_us": {
+    "title": "Why Choose Us",
+    "subtitle": "What makes us different from the competition",
+    "advantages": [
+      {
+        "title": "Unique Value",
+        "description": "Our unique approach"
+      },
+      {
+        "title": "Better Service",
+        "description": "We focus on customer satisfaction"
+      }
+    ],
+    "differentiation_points": [
+      "Unique approach",
+      "Better customer experience",
+      "Competitive pricing"
+    ]
+  }
+}
